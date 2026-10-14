@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Análise tributária gratuita · Jornada Tax</title>
+<meta name="description" content="Veja quanto a sua empresa pagaria nos dois cenários da transição, com e sem ICMS sobre CBS e IBS, e se existem créditos tributários acumulados.">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Lora:wght@500;600&family=Roboto+Flex:opsz,wght@8..144,300;8..144,400;8..144,500;8..144,600&display=swap');
+
+  :root {
+    --azul-royal: #040C3D;
+    --preto:      #01051C;
+    --azul-medio: #4875B7;
+    --branco:     #FFFFFF;
+    --cinza-claro:#DDDDDD;
+    --cinza-medio:#5E5F61;
+    --erro:       #b23b3b; /* vermelho sóbrio só para validação (não é acento de marca) */
+
+    --serif: 'Lora', Georgia, 'Times New Roman', serif;
+    --sans:  'Roboto Flex', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: var(--sans);
+    color: var(--azul-royal);
+    background:
+      radial-gradient(1100px 700px at 50% -10%, #0a1655 0%, var(--azul-royal) 42%, var(--preto) 100%);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: clamp(20px, 5vw, 64px) 18px;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .stage { animation: rise .6s cubic-bezier(.2,.7,.2,1) both; }
+  }
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+  .stage { position: relative; width: 100%; max-width: 600px; }
+
+  .watermark {
+    position: absolute; top: -46px; left: 50%; transform: translateX(-50%);
+    width: 240px; opacity: .06; pointer-events: none; z-index: 0;
+  }
+  .watermark svg { width: 100%; height: auto; display: block; }
+
+  .brand {
+    position: relative; z-index: 1;
+    display: flex; align-items: center; gap: 12px; justify-content: center;
+    margin-bottom: 22px;
+  }
+  .brand .sym { width: 34px; height: 34px; flex: 0 0 auto; }
+  .brand .sym svg { width: 100%; height: 100%; display: block; }
+  .brand .name { font-family: var(--serif); font-weight: 600; font-size: 21px; letter-spacing: .01em; color: var(--branco); }
+  .brand .name b { font-weight: 400; opacity: .82; }
+
+  .card {
+    position: relative; z-index: 1;
+    background: var(--branco);
+    border-radius: 16px;
+    padding: clamp(26px, 5vw, 44px);
+    box-shadow: 0 24px 60px rgba(1,5,28,.42), 0 2px 0 rgba(255,255,255,.06);
+  }
+
+  .eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--azul-medio); margin: 0 0 12px; }
+  h1 {
+    font-family: var(--serif); font-weight: 600;
+    font-size: clamp(25px, 4.6vw, 32px); line-height: 1.16;
+    text-wrap: balance; margin: 0 0 12px; color: var(--azul-royal);
+  }
+  .lead { margin: 0 0 24px; font-size: 15.5px; line-height: 1.55; color: var(--cinza-medio); max-width: 48ch; }
+
+  /* Como funciona */
+  .steps {
+    list-style: none; margin: 0 0 30px; padding: 16px 18px;
+    background: #f4f7fb; border: 1px solid #e4e9f1; border-radius: 12px;
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
+  }
+  @media (max-width: 520px) { .steps { grid-template-columns: 1fr; gap: 10px; } }
+  .steps li { display: flex; gap: 10px; align-items: flex-start; font-size: 13.5px; line-height: 1.4; color: var(--azul-royal); }
+  .steps .n {
+    flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%;
+    background: var(--azul-royal); color: var(--branco);
+    font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center;
+  }
+
+  form { display: flex; flex-direction: column; gap: 22px; }
+  .field { display: flex; flex-direction: column; gap: 8px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 520px) { .row2 { grid-template-columns: 1fr; gap: 22px; } }
+
+  label.q { font-size: 14px; font-weight: 600; color: var(--azul-royal); letter-spacing: .005em; }
+  label.q .req { color: var(--azul-medio); margin-left: 2px; }
+  label.q .opt { color: var(--cinza-medio); font-weight: 400; margin-left: 4px; }
+  .hint { font-size: 12.5px; color: var(--cinza-medio); font-weight: 400; }
+
+  input[type="text"], input[type="tel"], input[type="email"], select, textarea {
+    font-family: var(--sans); font-size: 15.5px; color: var(--azul-royal);
+    background: #fbfbfd; border: 1.5px solid var(--cinza-claro); border-radius: 10px;
+    padding: 13px 15px; width: 100%;
+    transition: border-color .15s, box-shadow .15s, background .15s;
+  }
+  textarea { min-height: 96px; resize: vertical; line-height: 1.5; }
+  select {
+    appearance: none; -webkit-appearance: none; cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23040C3D' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 15px center; padding-right: 40px;
+  }
+  select:invalid { color: #a9abb1; }
+  input::placeholder, textarea::placeholder { color: #a9abb1; }
+  input:hover, select:hover, textarea:hover { border-color: #c4c6cc; }
+  input:focus, select:focus, textarea:focus {
+    outline: none; border-color: var(--azul-medio); background: #fff;
+    box-shadow: 0 0 0 4px rgba(72,117,183,.16);
+  }
+
+  /* Chips */
+  .chips { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 420px) { .chips { grid-template-columns: 1fr; } }
+  .chip { position: relative; display: flex; }
+  .chip input { position: absolute; opacity: 0; inset: 0; cursor: pointer; margin: 0; }
+  .chip span {
+    flex: 1; display: flex; align-items: center; gap: 10px;
+    padding: 13px 15px; border: 1.5px solid var(--cinza-claro); border-radius: 10px;
+    font-size: 14.5px; color: var(--azul-royal); background: #fbfbfd;
+    transition: border-color .15s, background .15s, box-shadow .15s;
+  }
+  .chip span::before {
+    content: ""; width: 16px; height: 16px; border-radius: 50%;
+    border: 2px solid #c4c6cc; flex: 0 0 auto;
+    transition: border-color .15s, box-shadow .15s, background .15s;
+  }
+  .chip input:hover + span { border-color: #b8bac0; }
+  .chip input:focus-visible + span { box-shadow: 0 0 0 4px rgba(72,117,183,.16); border-color: var(--azul-medio); }
+  .chip input:checked + span { border-color: var(--azul-medio); background: #eef3fa; font-weight: 500; }
+  .chip input:checked + span::before {
+    border-color: var(--azul-medio);
+    background: radial-gradient(circle at center, var(--azul-medio) 0 5px, #fff 6px 8px);
+  }
+
+  /* Regime: 4 chips em linha no desktop */
+  .chips.four { grid-template-columns: repeat(4, 1fr); }
+  @media (max-width: 560px) { .chips.four { grid-template-columns: 1fr 1fr; } }
+  .chips.four .chip span { justify-content: center; text-align: center; padding: 13px 8px; }
+  .chips.four .chip span::before { display: none; }
+  .chips.four .chip input:checked + span { background: var(--azul-royal); border-color: var(--azul-royal); color: var(--branco); font-weight: 600; }
+
+  /* Privacidade e consentimentos */
+  .privacy {
+    background: #f4f7fb; border: 1px solid #e4e9f1; border-radius: 12px;
+    padding: 18px 20px; display: flex; flex-direction: column; gap: 14px;
+  }
+  .privacy details { font-size: 13px; color: var(--cinza-medio); line-height: 1.55; }
+  .privacy summary { cursor: pointer; font-weight: 600; color: var(--azul-royal); font-size: 13.5px; }
+  .privacy details p { margin: 10px 0 0; }
+  .check { display: flex; gap: 12px; align-items: flex-start; cursor: pointer; font-size: 13.5px; line-height: 1.5; color: var(--azul-royal); }
+  .check input {
+    appearance: none; -webkit-appearance: none; flex: 0 0 auto;
+    width: 20px; height: 20px; margin: 1px 0 0; border-radius: 5px;
+    border: 2px solid #c4c6cc; background: #fff; cursor: pointer; position: relative;
+    transition: border-color .15s, background .15s;
+  }
+  .check input:checked { background: var(--azul-medio); border-color: var(--azul-medio); }
+  .check input:checked::after {
+    content: ""; position: absolute; left: 5px; top: 1px; width: 6px; height: 11px;
+    border: solid #fff; border-width: 0 2.4px 2.4px 0; transform: rotate(45deg);
+  }
+  .check input:focus-visible { box-shadow: 0 0 0 4px rgba(72,117,183,.2); outline: none; }
+
+  .err-msg { font-size: 12.5px; color: var(--erro); font-weight: 500; display: none; }
+  .field.invalid .err-msg { display: block; }
+  .field.invalid input[type="text"], .field.invalid input[type="tel"],
+  .field.invalid input[type="email"], .field.invalid select {
+    border-color: var(--erro); box-shadow: 0 0 0 4px rgba(178,59,59,.12);
+  }
+  .field.invalid .check input { border-color: var(--erro); }
+
+  .safe { display: flex; gap: 10px; align-items: center; font-size: 12.5px; color: var(--cinza-medio); }
+  .safe svg { flex: 0 0 auto; }
+
+  button.submit {
+    font-family: var(--sans); font-size: 16px; font-weight: 600; letter-spacing: .01em;
+    color: var(--branco); background: var(--azul-medio);
+    border: none; border-radius: 10px; padding: 17px; cursor: pointer;
+    transition: background .15s, transform .06s;
+  }
+  button.submit:hover { background: #3f68a5; }
+  button.submit:active { transform: translateY(1px); }
+  button.submit:focus-visible { outline: none; box-shadow: 0 0 0 4px rgba(72,117,183,.35); }
+  button.submit[disabled] { opacity: .7; cursor: default; }
+
+  .foot { margin-top: 18px; text-align: center; font-size: 12px; line-height: 1.6; color: rgba(255,255,255,.6); position: relative; z-index: 1; }
+
+  /* Sucesso */
+  .success { display: none; text-align: center; padding: 8px 4px 4px; }
+  .card.done .form-body { display: none; }
+  .card.done .success { display: block; }
+  .success .mark { width: 62px; height: 62px; margin: 0 auto 18px; border-radius: 50%; background: #eef3fa; display: flex; align-items: center; justify-content: center; }
+  .success .mark svg { width: 30px; height: 30px; }
+  .success h2 { font-family: var(--serif); font-weight: 600; font-size: 24px; margin: 0 0 10px; color: var(--azul-royal); }
+  .success p { margin: 0 auto; color: var(--cinza-medio); font-size: 15px; line-height: 1.55; max-width: 42ch; }
+  .success .recap { margin-top: 22px; text-align: left; border-top: 1px solid var(--cinza-claro); padding-top: 18px; display: grid; gap: 8px; }
+  .success .recap div { display: flex; justify-content: space-between; gap: 16px; font-size: 13.5px; }
+  .success .recap dt { color: var(--cinza-medio); }
+  .success .recap dd { margin: 0; color: var(--azul-royal); font-weight: 500; text-align: right; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="watermark" aria-hidden="true">
+    <svg viewBox="0 0 1080 1080" xmlns="http://www.w3.org/2000/svg"><path fill="#fff" d="M540,160.53c209.57,0,379.47,169.89,379.47,379.47s-169.89,379.47-379.47,379.47-379.47-169.89-379.47-379.47,169.89-379.47,379.47-379.47M540,148.51c-215.87,0-391.49,175.62-391.49,391.49s175.62,391.49,391.49,391.49,391.49-175.62,391.49-391.49-175.62-391.49-391.49-391.49h0Z"/><path fill="#fff" d="M176.73,529.95c5.36-195.75,166.27-353.35,363.27-353.35s363.4,163.04,363.4,363.4c0,50.9-10.5,99.37-29.46,143.39-20.4,47.3-50.55,89.42-87.9,123.87-64.76,59.67-151.23,96.14-246.04,96.14s-181.25-36.47-246.01-96.14c-37.33-34.39-67.43-76.47-87.8-123.68-3.17-7.28-6.08-14.66-8.74-22.18-4.51-12.64-8.32-25.65-11.41-38.87v-.05c-5.07-21.73-8.16-44.18-9.12-67.19-.21-5.07-.32-10.16-.32-15.28,0-3.36.05-6.72.13-10.05ZM883.46,540c0-189.38-154.08-343.43-343.46-343.43s-339.46,150.11-343.35,336.13c2.29.35,4.56.67,6.74.93,8.05,1.01,14.98,1.39,17.33-.32l26.8-45.81,3.31-5.68,10.16-17.36,7.79-13.33,2.99-5.09,8.08-13.84,58.28-21.81,15.86-27.04,13.52-23.04,18.56-10.85,9.78-5.73,24.61-27.12,27.86-30.69,11.97-13.2c6.27,6.93,12.29,14.05,18.29,21.25,8.21,9.84,16.32,19.81,24.66,29.54,1.25,1.47,2.53,2.91,3.84,4.35,10.13,11.28,21.6,22.4,30.66,34.1,10.32,13.28,18.61,29.38,28.69,42.98,4.69,2.91,16.98-7.31,22.18-1.39,10.64,15.7,21.89,30.98,32.66,46.58,1.41,2.08,2.85,4.13,4.24,6.24.56.8,1.09,1.6,1.65,2.43,4.19,6.24,7.23,11.12,10.5,16,2.16,3.23,4.37,6.43,7.09,10.02,1.12,1.52,2.35,3.09,3.68,4.77,9.44,11.86,18.77,23.81,28,35.83,4.69,3.65,9.84,2.96,14.82.67,2.77-1.31,5.49-3.09,8.02-4.91,5.71-4.05,10.48-8.19,12.98-6.93l18.53,19.38,100.12,104.73,27.97,29.25c15.86-39.49,24.58-82.55,24.58-127.63ZM540,748.51c-114.86,0-208.51-93.65-208.51-208.51s93.65-208.51,208.51-208.51,208.51,93.65,208.51,208.51-93.65,208.51-208.51,208.51Z"/></svg>
+  </div>
+
+  <div class="brand">
+    <span class="sym" aria-hidden="true">
+      <svg viewBox="0 0 1080 1080" xmlns="http://www.w3.org/2000/svg"><path fill="#fff" d="M540,148.51c-215.87,0-391.49,175.62-391.49,391.49s175.62,391.49,391.49,391.49,391.49-175.62,391.49-391.49-175.62-391.49-391.49-391.49ZM540,907.49c-202.63,0-367.49-164.86-367.49-367.49s164.86-367.49,367.49-367.49,367.49,164.86,367.49,367.49-164.86,367.49-367.49,367.49Z"/><path fill="#fff" d="M540,236.6c-155.75,0-283.9,120.9-292.66,273.35-.06,1.66-.11,3.32-.14,4.99-.02,1.68-.03,3.36-.03,5.05,0,167.31,135.53,302.85,302.85,302.85s302.85-135.53,302.85-302.85c0-1.69-.01-3.37-.03-5.05-8.79-152.45-136.94-283.35-292.66-283.35v5.02ZM540,798.83c-138.55,0-251.35-112.79-251.35-251.35,0-.9,0-1.79.02-2.68l82.16-140.44c1.24-2.12,1.94-3.31,2.06-3.51l58.55-100.09,58.56,100.09,180.34,308.3c-45.99,55.62-115.5,91.05-192.94,91.05-45.99,0-88.87-12.35-125.94-33.91l187.55-320.55,187.53,320.52c-45.42,17.87-84.98,32.02-186.53,32.47Z"/></svg>
+    </span>
+    <span class="name">Jornada <b>Tax</b></span>
+  </div>
+
+  <div class="card" id="card">
+    <div class="form-body">
+      <p class="eyebrow">Reforma Tributária · ARK</p>
+      <h1>Solicite sua análise tributária gratuita</h1>
+      <p class="lead">Veja quanto a sua empresa pagaria nos dois cenários da transição, com e sem ICMS sobre CBS e IBS, e se existem créditos tributários acumulados.</p>
+
+      <ol class="steps">
+        <li><span class="n">1</span><span>Você preenche este formulário</span></li>
+        <li><span class="n">2</span><span>Agendamos uma conversa, sem custo</span></li>
+        <li><span class="n">3</span><span>Se fizer sentido, análise no ARK com os seus números</span></li>
+      </ol>
+
+      <form id="form" novalidate>
+        <div class="field" id="f-nome">
+          <label class="q" for="nome">Nome completo <span class="req">*</span></label>
+          <input type="text" id="nome" name="nome" placeholder="Seu nome e sobrenome" autocomplete="name">
+          <span class="err-msg">Informe seu nome.</span>
+        </div>
+
+        <div class="field" id="f-empresa">
+          <label class="q" for="empresa">Nome da empresa <span class="req">*</span></label>
+          <input type="text" id="empresa" name="empresa" placeholder="Razão social ou nome fantasia" autocomplete="organization">
+          <span class="err-msg">Informe o nome da empresa.</span>
+        </div>
+
+        <div class="row2">
+          <div class="field" id="f-email">
+            <label class="q" for="email">E-mail corporativo <span class="req">*</span></label>
+            <input type="email" id="email" name="email" placeholder="voce@empresa.com.br" autocomplete="email" inputmode="email">
+            <span class="err-msg">Informe um e-mail válido.</span>
+          </div>
+          <div class="field" id="f-tel">
+            <label class="q" for="whatsapp">WhatsApp com DDD <span class="req">*</span></label>
+            <input type="tel" id="whatsapp" name="whatsapp" placeholder="(61) 90000-0000" autocomplete="tel" inputmode="tel">
+            <span class="err-msg">Informe um número válido com DDD.</span>
+          </div>
+        </div>
+
+        <div class="field" id="f-cargo">
+          <label class="q">Cargo ou posição na empresa <span class="req">*</span></label>
+          <div class="chips" role="radiogroup" aria-label="Cargo ou posição na empresa">
+            <label class="chip"><input type="radio" name="cargo" value="Sócio ou diretor"><span>Sócio ou diretor</span></label>
+            <label class="chip"><input type="radio" name="cargo" value="Diretor financeiro ou CFO"><span>Diretor financeiro ou CFO</span></label>
+            <label class="chip"><input type="radio" name="cargo" value="Controller ou gerente financeiro"><span>Controller ou gerente financeiro</span></label>
+            <label class="chip"><input type="radio" name="cargo" value="Gerente ou analista fiscal"><span>Gerente ou analista fiscal</span></label>
+            <label class="chip"><input type="radio" name="cargo" value="Contador de escritório contábil"><span>Contador de escritório contábil</span></label>
+            <label class="chip"><input type="radio" name="cargo" value="Outro"><span>Outro</span></label>
+          </div>
+          <span class="err-msg">Selecione uma opção.</span>
+        </div>
+
+        <div class="field" id="f-regime">
+          <label class="q">Regime tributário da empresa <span class="req">*</span></label>
+          <div class="chips four" role="radiogroup" aria-label="Regime tributário">
+            <label class="chip"><input type="radio" name="regime" value="Simples Nacional"><span>Simples Nacional</span></label>
+            <label class="chip"><input type="radio" name="regime" value="Lucro Presumido"><span>Lucro Presumido</span></label>
+            <label class="chip"><input type="radio" name="regime" value="Lucro Real"><span>Lucro Real</span></label>
+            <label class="chip"><input type="radio" name="regime" value="Outro"><span>Outro</span></label>
+          </div>
+          <span class="err-msg">Selecione o regime.</span>
+        </div>
+
+        <div class="field" id="f-uf">
+          <label class="q" for="uf">Estado da sede <span class="req">*</span></label>
+          <select id="uf" name="uf" required>
+            <option value="" disabled selected>Selecione o estado</option>
+            <option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>BA</option>
+            <option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option>
+            <option>MT</option><option>MS</option><option>MG</option><option>PA</option><option>PB</option>
+            <option>PR</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option>
+            <option>RS</option><option>RO</option><option>RR</option><option>SC</option><option>SP</option>
+            <option>SE</option><option>TO</option>
+          </select>
+          <span class="hint">A posição sobre o ICMS muda de estado para estado.</span>
+          <span class="err-msg">Selecione o estado.</span>
+        </div>
+
+        <div class="field" id="f-coment">
+          <label class="q" for="comentarios">Comentários ou dúvidas tributárias <span class="opt">(opcional)</span></label>
+          <textarea id="comentarios" name="comentarios" placeholder="Conte o que a sua empresa quer entender"></textarea>
+        </div>
+
+        <div class="privacy">
+          <details>
+            <summary>Aviso de privacidade</summary>
+            <p>Os dados informados serão tratados pela JORNADA TAX LTDA (CNPJ 59.278.367/0001-14), com sede em Brasília/DF, para contato sobre a análise solicitada e apresentação de soluções relacionadas, com base no seu consentimento e em procedimentos preliminares a uma possível contratação feitos a seu pedido (LGPD, art. 7º, incisos I e V).</p>
+            <p>Para realizar a análise, os dados poderão ser compartilhados com empresas do Vocare Group, do qual a Jornada Tax faz parte, em especial a Vocare Tech, responsável pela plataforma ARK. Os dados não são vendidos nem repassados a terceiros fora do grupo.</p>
+            <p>Este formulário não solicita acesso a informações fiscais da empresa. Se a análise aprofundada exigir esse acesso, ele dependerá de autorização expressa, separada e revogável, pedida apenas em etapa posterior, com finalidade e escopo descritos por escrito.</p>
+            <p>Você pode pedir acesso, correção ou exclusão dos seus dados, ou revogar este consentimento, a qualquer momento, pelo e-mail info@jornadatax.com.</p>
+          </details>
+
+          <div class="field" id="f-consent">
+            <label class="check">
+              <input type="checkbox" id="consent" name="consent">
+              <span>Li o aviso de privacidade e autorizo a Jornada Tax e as empresas do Vocare Group a entrar em contato por WhatsApp, e-mail e telefone sobre a análise solicitada. <span style="color:var(--azul-medio)">*</span></span>
+            </label>
+            <span class="err-msg">Precisamos da sua autorização para entrar em contato.</span>
+          </div>
+
+          <label class="check">
+            <input type="checkbox" id="news" name="news">
+            <span>Quero receber conteúdos e novidades da Jornada Tax sobre a Reforma Tributária.</span>
+          </label>
+        </div>
+
+        <p class="safe">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4875B7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+          Este formulário não pede senha, certificado digital nem acesso a sistemas fiscais.
+        </p>
+
+        <button type="submit" class="submit" id="btn">Quero minha análise gratuita</button>
+      </form>
+    </div>
+
+    <div class="success" id="success" role="status" aria-live="polite" tabindex="-1">
+      <div class="mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#4875B7" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+      </div>
+      <h2>Pedido recebido</h2>
+      <p>Obrigado. Um especialista da Jornada Tax vai falar com você por WhatsApp ou e-mail para agendar a conversa.</p>
+      <dl class="recap" id="recap"></dl>
+    </div>
+  </div>
+
+  <p class="foot">Análise feita no ARK, plataforma da Vocare Tech, empresa do mesmo grupo da Jornada Tax.<br>Jornada Tax, a Reforma explicada por quem participa dela.</p>
+</div>
+
+<script>
+  (function () {
+    // ── Ligação com o Google Forms (banco das respostas) ────────────────
+    // As respostas caem no Google Form "Análise tributária gratuita (ARK)"
+    // e na planilha vinculada a ele. Para trocar um campo: crie no Forms e
+    // atualize o entry correspondente aqui.
+    var GOOGLE_FORM = 'https://docs.google.com/forms/d/e/1FAIpQLSd9FkqhEo5ydOUogFCgos6_gwABdD-JThtP69HKGB19oPbsLA/formResponse';
+    var ENTRY = {
+      nome:        'entry.637992453',
+      empresa:     'entry.163058110',
+      email:       'entry.649373363',
+      whatsapp:    'entry.854139622',
+      cargo:       'entry.286488834',
+      regime:      'entry.620377327',
+      uf:          'entry.1383041656',
+      comentarios: 'entry.1304128933',
+      consent:     'entry.1484908707',
+      news:        'entry.1588215439',
+      origem:      'entry.1988708014'
+    };
+    // ─────────────────────────────────────────────────────────────────────
+
+    var form = document.getElementById('form');
+    var card = document.getElementById('card');
+    var tel  = document.getElementById('whatsapp');
+    var btn  = document.getElementById('btn');
+
+    // Origem do lead: parâmetros UTM do link (ex.: ?utm_source=linkedin&utm_content=post-icms)
+    function origem() {
+      var p = new URLSearchParams(location.search);
+      var keys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content'];
+      var parts = keys.filter(function (k) { return p.get(k); })
+                      .map(function (k) { return k.replace('utm_', '') + '=' + p.get(k); });
+      return parts.length ? parts.join(' | ') : 'direto';
+    }
+
+    // Máscara de telefone BR: (61) 90000-0000
+    tel.addEventListener('input', function () {
+      var d = tel.value.replace(/\D/g, '').slice(0, 11);
+      var out = '';
+      if (d.length > 0) out = '(' + d.slice(0, 2);
+      if (d.length >= 2) out += ') ';
+      if (d.length > 2) {
+        var rest = d.slice(2);
+        if (d.length <= 10) { out += rest.slice(0, 4); if (rest.length > 4) out += '-' + rest.slice(4, 8); }
+        else { out += rest.slice(0, 5); if (rest.length > 5) out += '-' + rest.slice(5, 9); }
+      }
+      tel.value = out;
+    });
+
+    function digits(s) { return (s || '').replace(/\D/g, ''); }
+    function validEmail(s) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s); }
+    function checked(name) {
+      var el = form.querySelector('input[name="' + name + '"]:checked');
+      return el ? el.value : '';
+    }
+    function setInvalid(id, bad) { document.getElementById(id).classList.toggle('invalid', bad); }
+
+    form.addEventListener('input', function (e) { var f = e.target.closest('.field'); if (f) f.classList.remove('invalid'); });
+    form.addEventListener('change', function (e) { var f = e.target.closest('.field'); if (f) f.classList.remove('invalid'); });
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var data = {
+        nome:        document.getElementById('nome').value.trim(),
+        empresa:     document.getElementById('empresa').value.trim(),
+        email:       document.getElementById('email').value.trim(),
+        whatsapp:    tel.value.trim(),
+        cargo:       checked('cargo'),
+        regime:      checked('regime'),
+        uf:          document.getElementById('uf').value,
+        comentarios: document.getElementById('comentarios').value.trim(),
+        consent:     document.getElementById('consent').checked ? 'Sim' : '',
+        news:        document.getElementById('news').checked ? 'Sim' : 'Não',
+        origem:      origem()
+      };
+
+      var bad = false;
+      if (!data.nome)                     { setInvalid('f-nome', true); bad = true; }
+      if (!data.empresa)                  { setInvalid('f-empresa', true); bad = true; }
+      if (!validEmail(data.email))        { setInvalid('f-email', true); bad = true; }
+      if (digits(data.whatsapp).length < 10) { setInvalid('f-tel', true); bad = true; }
+      if (!data.cargo)                    { setInvalid('f-cargo', true); bad = true; }
+      if (!data.regime)                   { setInvalid('f-regime', true); bad = true; }
+      if (!data.uf)                       { setInvalid('f-uf', true); bad = true; }
+      if (!data.consent)                  { setInvalid('f-consent', true); bad = true; }
+
+      if (bad) {
+        var first = form.querySelector('.invalid input, .invalid select, .invalid');
+        if (first && first.focus) first.focus();
+        if (first && first.scrollIntoView) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Enviando...';
+
+      // Envio "cego" (no-cors): o Google não devolve confirmação legível,
+      // por isso a tela de sucesso aparece logo em seguida.
+      var fd = new FormData();
+      Object.keys(ENTRY).forEach(function (k) { fd.append(ENTRY[k], data[k]); });
+      fetch(GOOGLE_FORM, { method: 'POST', mode: 'no-cors', body: fd })
+        .catch(function () {})
+        .then(function () {
+          var recap = document.getElementById('recap');
+          recap.innerHTML = '';
+          [['Nome', data.nome], ['Empresa', data.empresa], ['E-mail', data.email],
+           ['WhatsApp', data.whatsapp], ['Regime', data.regime], ['Estado', data.uf]]
+            .forEach(function (row) {
+              var d = document.createElement('div');
+              var dt = document.createElement('dt'); dt.textContent = row[0];
+              var dd = document.createElement('dd'); dd.textContent = row[1];
+              d.appendChild(dt); d.appendChild(dd); recap.appendChild(d);
+            });
+          card.classList.add('done');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          document.getElementById('success').focus();
+        });
+    });
+  })();
+</script>
+</body>
+</html>
